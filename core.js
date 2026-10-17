@@ -1,0 +1,14 @@
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.GuideCore=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
+  'use strict';
+  const APP='priconne-part1-guide', VERSION=1, KEY=APP+':progress:v1';
+  function normalize(text){return String(text||'').normalize('NFKC').toLocaleLowerCase().replace(/\s+/g,' ').trim();}
+  function filtered(cards,filters,done){const q=normalize(filters.q);return cards.filter(c=>(!q||normalize([c.title,c.subtitle,c.guild,c.note,c.date,c.id,...(c.tags||[])].join(' ')).includes(q))&&(!filters.kind||c.kind===filters.kind)&&(!filters.state||(filters.state==='done'?done.has(c.id):!done.has(c.id)))&&(!filters.verification||c.verification===filters.verification)&&(!filters.guild||c.guild===filters.guild)&&(!filters.scope||c.scope===filters.scope));}
+  function ordered(cards,mode){return [...cards].sort(mode==='release'?(a,b)=>(a.date||'9999').localeCompare(b.date||'9999')||a.order-b.order:(a,b)=>a.order-b.order);}
+  function parseBackup(input,cards){if(typeof input!=='object'||input===null||Array.isArray(input)||input.app!==APP||input.schemaVersion!==VERSION||!Array.isArray(input.completed)||input.completed.length>20000||input.completed.some(v=>typeof v!=='string'||v.length>160))throw new Error('이 가이드의 올바른 v1 백업 파일이 아닙니다.');const known=new Set(cards.map(c=>c.id));const unique=[...new Set(input.completed)];return {completed:unique.filter(id=>known.has(id)),unknown:unique.filter(id=>!known.has(id)).length,datasetVersion:typeof input.datasetVersion==='string'?input.datasetVersion:'미기록'};}
+  function backup(done,datasetVersion){return {app:APP,schemaVersion:VERSION,datasetVersion,exportedAt:new Date().toISOString(),completed:[...done].sort()};}
+  function stats(cards,done){return {total:cards.length,done:cards.filter(c=>done.has(c.id)).length};}
+  function audit(data){const errors=[],ids=new Set();for(const c of data.cards){if(ids.has(c.id))errors.push('duplicate '+c.id);ids.add(c.id);if(!c.id||!c.title||!Number.isFinite(c.order)||!data.sections.some(s=>s.id===c.section))errors.push('invalid card '+c.id);if(c.date&&(!/^\d{4}-\d{2}-\d{2}$/.test(c.date)||Number.isNaN(Date.parse(c.date))))errors.push('invalid date '+c.id);if(!['main','event','bond','guild','extra','special'].includes(c.kind))errors.push('invalid kind '+c.id);if(!['official','crosschecked','partial','unverified'].includes(c.verification))errors.push('invalid verification '+c.id);for(const source of c.sources||[])if(!data.sources[source])errors.push('missing source '+source);}
+  for(const c of data.cards)for(const p of c.prerequisites||[]){const prev=data.cards.find(x=>x.id===p);if(!prev||prev.order>=c.order)errors.push('invalid prerequisite '+c.id+' / '+p);}
+  return errors;}
+  return {APP,VERSION,KEY,normalize,filtered,ordered,parseBackup,backup,stats,audit};
+});
