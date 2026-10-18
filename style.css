@@ -12,3 +12,5 @@ body{background:radial-gradient(ellipse at 90% 0,#fce7ef 0,transparent 34%),radi
 @media(prefers-reduced-motion:reduce){.companion{transition:none}.companion:hover{transform:none}.hero-art{transform:none}}
 
 .pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:20px 0;color:var(--muted);font-size:12px}.pagination button{white-space:nowrap}.pagination button:disabled{opacity:.4;cursor:default}@media(max-width:600px){.pagination{font-size:10px;gap:7px}.pagination button{padding:8px}.edition{display:none}}
+
+.name-status{font-size:11px;color:#735b39;background:#fff3d9;border-radius:5px;padding:2px 6px;white-space:normal}
